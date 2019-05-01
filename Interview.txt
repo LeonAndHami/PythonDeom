@@ -16,3 +16,17 @@
 4、python使用多进程是可以利用多核的CPU资源的。
 
 5、多线程爬取比单线程性能有提升，因为遇到IO阻塞会自动释放GIL锁。
+
+
+
+闭包面试题：请问t等于多少？
+def test1(x):
+    def test2():
+        for i in range(x):
+            pass
+	return i * x
+    return test2
+
+func = test1(5)
+t = func()
+答：t = 20。因为在for结束的时候，i=4已经被固定在闭包里了
