@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import scrapy
+from copy import deepcopy
+from books.items import BooksItem
 
 
 class DdSpider(scrapy.Spider):
@@ -9,28 +11,44 @@ class DdSpider(scrapy.Spider):
 
     def parse(self, response):
         divs = response.xpath("//div[@father='1']")[2:12]
-        # with open('d:/boo.txt','w',encoding='utf8') as f:
-        #     f.write(response.text)
-        # 2-- 11
         for div in divs:
-            item = {}
-            item["level_one"] = [x.strip() for x in div.xpath("./dl/dt//text()").extract() if len(x.strip()) > 0][0]
+            item = BooksItem()
+            item["l_one"] = [x.strip() for x in div.xpath("./dl/dt//text()").extract() if len(x.strip()) > 0][0]
             dls = div.xpath(".//dl[@class='inner_dl']")
-            print(len(dls))
-            count = 1
             for dl in dls:
-                # with open("d:/temp/dl"+str(count)+".txt","w",encoding="utf8") as f:
-                #     f.write(dl.extract())
-                item["level_two"] = [x.strip() for x in dl.xpath("./dt/a/text()").extract()]
-                if item["level_two"] is None:
-                    item["level_two"] = dl.xpath("./dt[position()=1]//text()").extract_first()
-                # count += 1
-                # a_list = dl.xpath("./dd/a")
-                # for a in a_list:
-                #     item["level_three"] = a.xpath("./text()").extract_first()
-                print(item)
-                print("*" * 20)
-            # return
-            # print(item)
-            # print("*" * 20)
-        pass
+
+                item["l_two"] = [x.strip() for x in dl.xpath("./dt/a/text()").extract()]
+                if not item["l_two"]:
+                    item["l_two"] = dl.xpath("./dt[position()=1]//text()").extract_first().strip()
+                else:
+                    item["l_two"] = item["l_two"][0]
+
+                a_list = dl.xpath("./dd/a")
+                for a in a_list:
+                    item["l_three"] = a.xpath("./text()").extract_first()
+                    item['category_url'] = a.xpath("./@href").extract_first()
+                    yield scrapy.Request(item['category_url'], callback=self.parse_detail, meta=deepcopy(item))
+
+    def parse_detail(self, response):
+        category = response.meta
+        li_list = response.xpath("//ul[@id='component_59']/li")
+        for li in li_list:
+            item = deepcopy(category)
+            item["title"] = li.xpath("./a/@title").extract_first()
+            item["img"] = li.xpath("./a/img/@src").extract_first()
+            if "none" in item['img']:
+                item["img"] = li.xpath("./a/img/@data-original").extract_first()
+            item["detail"] = li.xpath("./p[@class='detail']/text()").extract_first()
+            item["price"] = li.xpath("./p[@class='price']/span/text()").extract_first()
+            item['author'] = li.xpath(
+                "./p[@class='search_book_author']/span[position()=1]/a/text()").extract_first()
+            item['pub_date'] = li.xpath(
+                "./p[@class='search_book_author']/span[position()=2]/text()").extract_first().replace(" /", "")
+            item['publisher'] = li.xpath(
+                "./p[@class='search_book_author']/span[position()=3]/a/text()").extract_first()
+            yield item
+
+        next_page = response.xpath("//li[@class='next']/a/@href").extract_first()
+        if next_page:
+            next_page = "http://category.dangdang.com" + next_page
+            yield scrapy.Request(next_page, callback=self.parse_detail, meta=category)

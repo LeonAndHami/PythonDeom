@@ -8,4 +8,6 @@
 
 class BooksPipeline(object):
     def process_item(self, item, spider):
+        print(item)
+        print("*" * 30)
         return item
