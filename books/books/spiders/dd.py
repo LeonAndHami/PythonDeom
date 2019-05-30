@@ -2,12 +2,13 @@
 import scrapy
 from copy import deepcopy
 from books.items import BooksItem
+from scrapy_redis.spiders import RedisSpider
 
 
 class DdSpider(scrapy.Spider):
     name = 'dd'
     allowed_domains = ['dangdang.com']
-    start_urls = ['http://book.dangdang.com/']
+    start_urls = ['http://book.dangdang.com/']  # 启用RedisSpider后，不需要start_urls
 
     def parse(self, response):
         divs = response.xpath("//div[@father='1']")[2:12]

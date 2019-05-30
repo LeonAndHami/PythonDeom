@@ -14,6 +14,12 @@ BOT_NAME = 'books'
 SPIDER_MODULES = ['books.spiders']
 NEWSPIDER_MODULE = 'books.spiders'
 
+# 用这4行可以实现断点续爬的效果
+SCHEDULER = "scrapy_redis.scheduler.Scheduler"
+DUPEFILTER_CLASS = "scrapy_redis.dupefilter.RFPDupeFilter"
+REDIS_URL = 'redis://192.168.43.149:6379'
+SCHEDULER_PERSIST = True
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 # USER_AGENT = 'books (+http://www.yourdomain.com)'
 
@@ -66,7 +72,8 @@ DEFAULT_REQUEST_HEADERS = {
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   'books.pipelines.BooksPipeline': 300,
+    'books.pipelines.BooksPipeline': 300,
+    'scrapy_redis.pipelines.RedisPipeline': 301
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
