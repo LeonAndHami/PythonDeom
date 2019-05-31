@@ -5,10 +5,14 @@ from books.items import BooksItem
 from scrapy_redis.spiders import RedisSpider
 
 
-class DdSpider(scrapy.Spider):
+class DdSpider(RedisSpider):
     name = 'dd'
     allowed_domains = ['dangdang.com']
-    start_urls = ['http://book.dangdang.com/']  # 启用RedisSpider后，不需要start_urls
+    # start_urls = ['http://book.dangdang.com/']  # 在settngs中加入redis的配置，就可以实现断点续爬、增量式爬虫，但还是单机的。
+
+    # 爬虫类继承，RedisSpider，加上redis_key后，就可以实现分布式爬虫。
+    # 只有一台电脑都读取redis_key的url,读取之后，会pop掉，保证别的电脑读不到(不需要start_urls)
+    redis_key = "dd"  # 记得往redis_key加入起始url，而且键是list类型  lpush dd http://book.dangdang.com/
 
     def parse(self, response):
         divs = response.xpath("//div[@father='1']")[2:12]
